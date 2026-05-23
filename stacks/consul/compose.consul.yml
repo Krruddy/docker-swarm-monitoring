@@ -1,0 +1,274 @@
+x-consul-common: &consul-common
+  image: hashicorp/consul:1.22.7
+  configs:
+    - source: consul-server-config
+      target: /consul/config/server.hcl
+      uid: "100"
+      gid: "1000"
+      mode: 0400
+  #restart: on-failure:3
+
+services:
+  consul-1:
+    <<: *consul-common
+    hostname: consul-1
+    #entrypoint: ["sleep", "infinity"]
+    command: |
+      agent 
+        -config-dir=/consul/config/
+        -advertise=${DOCKER_1_HOST_IP}
+    volumes:
+      - consul-server-1-data:/consul/data
+    secrets:
+      - source: consul-server1-cert-v1
+        target: /consul/tls/server.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-server1-key-v1
+        target: /consul/tls/server-key.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-ca-v1
+        target: /consul/tls/ca.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-gossip-key-v1
+        target: /consul/config/zz-gossip.hcl
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+    deploy:
+      placement: 
+        constraints:
+          - node.labels.hypervisor==${CONSUL_1_PLACEMENT_LABEL}
+    ports:
+      - target: 8600
+        published: 8600
+        protocol: tcp
+        mode: host
+      - target: 8600
+        published: 8600
+        protocol: udp
+        mode: host
+      - target: 8500
+        published: 8500
+        protocol: tcp
+        mode: host
+      - target: 8501
+        published: 8501
+        protocol: tcp
+        mode: host
+      - target: 8502
+        published: 8502
+        protocol: tcp
+        mode: host
+      - target: 8503
+        published: 8503
+        protocol: tcp
+        mode: host
+      - target: 8300
+        published: 8300
+        protocol: tcp
+        mode: host
+      - target: 8301
+        published: 8301
+        protocol: tcp
+        mode: host
+      - target: 8301
+        published: 8301
+        protocol: udp
+        mode: host
+      - target: 8302
+        published: 8302
+        protocol: tcp
+        mode: host
+      - target: 8302
+        published: 8302
+        protocol: udp
+        mode: host
+
+  consul-2:
+    <<: *consul-common
+    hostname: consul-2
+    command: |
+      agent 
+        -config-dir=/consul/config/
+        -advertise=${DOCKER_2_HOST_IP}
+    volumes:
+      - consul-server-2-data:/consul/data
+    secrets:
+      - source: consul-server2-cert-v1
+        target: /consul/tls/server.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-server2-key-v1
+        target: /consul/tls/server-key.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-ca-v1
+        target: /consul/tls/ca.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-gossip-key-v1
+        target: /consul/config/zz-gossip.hcl
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+    deploy:
+      placement: 
+        constraints:
+          - node.labels.hypervisor==${CONSUL_2_PLACEMENT_LABEL}
+    ports:
+      - target: 8600
+        published: 8600
+        protocol: tcp
+        mode: host
+      - target: 8600
+        published: 8600
+        protocol: udp
+        mode: host
+      - target: 8500
+        published: 8500
+        protocol: tcp
+        mode: host
+      - target: 8501
+        published: 8501
+        protocol: tcp
+        mode: host
+      - target: 8502
+        published: 8502
+        protocol: tcp
+        mode: host
+      - target: 8503
+        published: 8503
+        protocol: tcp
+        mode: host
+      - target: 8300
+        published: 8300
+        protocol: tcp
+        mode: host
+      - target: 8301
+        published: 8301
+        protocol: tcp
+        mode: host
+      - target: 8301
+        published: 8301
+        protocol: udp
+        mode: host
+      - target: 8302
+        published: 8302
+        protocol: tcp
+        mode: host
+      - target: 8302
+        published: 8302
+        protocol: udp
+        mode: host
+
+  consul-3:
+    <<: *consul-common
+    hostname: consul-3
+    command: |
+      agent 
+        -config-dir=/consul/config/
+        -advertise=${DOCKER_3_HOST_IP}
+    volumes:
+      - consul-server-3-data:/consul/data
+    secrets:
+      - source: consul-server3-cert-v1
+        target: /consul/tls/server.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-server3-key-v1
+        target: /consul/tls/server-key.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-ca-v1
+        target: /consul/tls/ca.pem
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+      - source: consul-gossip-key-v1
+        target: /consul/config/zz-gossip.hcl
+        uid: "100"
+        gid: "1000"
+        mode: 0400
+    deploy:
+      placement: 
+        constraints:
+          - node.labels.hypervisor==${CONSUL_3_PLACEMENT_LABEL}
+    ports:
+      - target: 8600
+        published: 8600
+        protocol: tcp
+        mode: host
+      - target: 8600
+        published: 8600
+        protocol: udp
+        mode: host
+      - target: 8500
+        published: 8500
+        protocol: tcp
+        mode: host
+      - target: 8501
+        published: 8501
+        protocol: tcp
+        mode: host
+      - target: 8502
+        published: 8502
+        protocol: tcp
+        mode: host
+      - target: 8503
+        published: 8503
+        protocol: tcp
+        mode: host
+      - target: 8301
+        published: 8301
+        protocol: tcp
+        mode: host
+      - target: 8301
+        published: 8301
+        protocol: udp
+        mode: host
+      - target: 8302
+        published: 8302
+        protocol: tcp
+        mode: host
+      - target: 8302
+        published: 8302
+        protocol: udp
+        mode: host
+
+volumes:
+  consul-server-1-data:
+  consul-server-2-data:
+  consul-server-3-data:
+
+configs:
+  consul-server-config:
+    external: true
+
+secrets:
+  consul-ca-v1:
+    external: true
+  consul-gossip-key-v1:
+    external: true
+  consul-server1-cert-v1:
+    external: true
+  consul-server1-key-v1:
+    external: true
+  consul-server2-cert-v1:
+    external: true
+  consul-server2-key-v1:
+    external: true
+  consul-server3-cert-v1:
+    external: true
+  consul-server3-key-v1:
+    external: true
