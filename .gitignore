@@ -1,0 +1,25 @@
+# Environment files 
+.env
+
+# Secrets directory 
+secrets/*
+!secrets/.gitkeep
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local debug artifacts
+debug/*
+!debug/.gitkeep

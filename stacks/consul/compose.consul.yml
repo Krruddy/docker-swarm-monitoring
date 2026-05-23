@@ -6,8 +6,6 @@ x-consul-common: &consul-common
       uid: "100"
       gid: "1000"
       mode: 0400
-  networks:
-    - consul-net
 
 services:
   consul-1:
@@ -277,6 +275,3 @@ secrets:
   consul-server3-key-v1:
     external: true
 
-networks:
-  consul-net:
-    external: true
