@@ -108,6 +108,111 @@ docker secret create consul-server3-key-v1  ./secrets/dc1-server-consul-2-key.pe
 
 # Consul
 
+## Tokens
+
+Get bootstrap token:
+
+```bash
+docker exec <container_id> consul acl bootstrap
+```
+
+Manually generate the node-identity tokens for the Consul clients:
+
+```bash
+export CONSUL_HTTP_TOKEN=<minter-token-secret-id>
+
+consul acl token create \
+  -description "Agent token for ${CONSUL_CLIENT_1_FQDN}" \
+  -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}"
+
+
+consul acl token create \
+  -description "Agent token for ${CONSUL_CLIENT_2_FQDN}" \
+  -node-identity="${CONSUL_CLIENT_2_HOSTNAME}:${CONSUL_DATACENTER}"
+
+consul acl token create \
+  -description "Agent token for ${CONSUL_CLIENT_3_FQDN}" \
+  -node-identity="${CONSUL_CLIENT_3_HOSTNAME}:${CONSUL_DATACENTER}"
+```
+
+On each client, we create the file `/etc/consul.d/zz-acl.hcl` with the content:
+
+```bash
+acl {
+  enabled        = true
+  default_policy = "deny"
+  down_policy = "extend-cache"
+  tokens {
+    default = "<the-secret-id>"
+  }
+}
+```
+
+Set the correct permissions:
+
+```bash
+sudo chown consul:consul /etc/consul.d/zz-acl.hcl
+sudo chmod 0600 /etc/consul.d/zz-acl.hcl
+```
+
+Reload:
+
+```bash
+sudo systemctl reload consul
+```
+
+## Templated policy to give agent write
+
+Write the temporary template policy in a file:
+
+```bash
+cat > /tmp/agent-${CONSUL_CLIENT_1_HOSTNAME}-policy.hcl <<EOF
+agent "${CONSUL_CLIENT_1_HOSTNAME}" {
+  policy = "write"
+}
+EOF
+```
+
+Create the templated policy:
+
+```bash
+consul acl policy create \
+  -name "agent-${CONSUL_CLIENT_1_HOSTNAME}-policy" \
+  -description "Agent permissions for client ${CONSUL_CLIENT_1_HOSTNAME}" \
+  -rules @/tmp/agent-${CONSUL_CLIENT_1_HOSTNAME}-policy.hcl
+```
+
+Create the role:
+
+```bash
+consul acl role create \
+  -name "agent-${CONSUL_CLIENT_1_HOSTNAME}-role" \
+  -description "Agent permissions for client ${CONSUL_CLIENT_1_HOSTNAME}" \
+  -policy-name "agent-${CONSUL_CLIENT_1_HOSTNAME}-policy"
+```
+
+Update the existing node identity token:
+
+```bash
+# Update
+consul acl token update \
+  -accessor-id=<accessor_id> \
+  -append-role-name="agent-${CONSUL_CLIENT_1_HOSTNAME}-role" \
+  -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}"
+```
+
+Or if it already exists, Mint it:
+
+```bash
+# Mint
+consul acl token create \
+  -description "Node identity token for ${CONSUL_CLIENT_1_HOSTNAME}" \
+  -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}" \
+  -role-name "agent-${CONSUL_CLIENT_1_HOSTNAME}-role"
+```
+
+## Setup
+
 Setup Consul by using the following commands on each client node.
 
 Install Consul:
