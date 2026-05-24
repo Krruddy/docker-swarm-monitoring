@@ -101,16 +101,89 @@ docker secret create consul-ca-v1 ./secrets/consul-agent-ca.pem
 docker secret create consul-server1-cert-v1 ./secrets/dc1-server-consul-0.pem
 docker secret create consul-server2-cert-v1 ./secrets/dc1-server-consul-1.pem
 docker secret create consul-server3-cert-v1 ./secrets/dc1-server-consul-2.pem
-docker secret create consul-server1-key-v1  ./secrets/dc1-client-consul-0-key.pem
-docker secret create consul-server2-key-v1  ./secrets/dc1-client-consul-1-key.pem
-docker secret create consul-server3-key-v1  ./secrets/dc1-client-consul-2-key.pem
+docker secret create consul-server1-key-v1  ./secrets/dc1-server-consul-0-key.pem
+docker secret create consul-server2-key-v1  ./secrets/dc1-server-consul-1-key.pem
+docker secret create consul-server3-key-v1  ./secrets/dc1-server-consul-2-key.pem
 ```
 
 # Consul
 
+Setup Consul by using the following commands on each client node.
+
+Install Consul:
+
+```bash
+sudo apt install gpg
+wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install consul
+```
+
+Get the encryption key on a Docker manager:
+
+```bash
+docker exec <container_id> cat /consul/config/zz-gossip.hcl
+```
+
+change rights:
+
+```bash
+sudo chmod 600 /etc/consul.d/zz-gossip.hcl
+sudo chown consul:consul /etc/consul.d/zz-gossip.hcl
+sudo chmod 600 dc1-client-consul-n-key.pem
+sudo chmod 644 dc1-client-consul-n.pem
+sudo chmod 644 consul-agent-ca.pem
+sudo chown consul:consul /opt/consul/*.pem
+```
+
+```bash
+sudo systemctl enable consul --now
+```
+
+configuration file:
+
+```hcl
+server = false
+datacenter = "dc1"
+data_dir = "/opt/consul"
+
+retry_join = [
+  "${DOCKER_1_FQDN}",
+  "${DOCKER_2_FQDN}",
+  "${DOCKER_3_FQDN}"
+]
+
+encrypt_verify_incoming = true
+encrypt_verify_outgoing = true
+
+acl {
+  enabled = true
+  default_policy = "deny"
+  down_policy = "extend-cache"
+  enable_token_persistence = true
+}
+
+tls {
+  defaults {
+    verify_incoming = true
+    verify_outgoing = true
+    ca_file = "/opt/consul/consul-agentca.pem"
+    cert_file = "/opt/consul/dc1-client-consul-n.pem"
+    key_file = "/opt/consul/dc1-client-consul-n-key.pem"
+  }
+  internal_rpc {
+    verify_server_hostname = true
+  }
+}
+
+log_level = "INFO"
+log_json = true
+```
+
+
 ## Certificates
 
-Generate certificates with the following commands:
+Generate certificates with the following commands in `./secrets/`:
 
 ```bash
 cd ./secrets
