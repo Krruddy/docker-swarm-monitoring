@@ -12,6 +12,7 @@ secrets/*
 *.swo
 *~
 .DS_Store
+.claude/
 
 # OS
 Thumbs.db
