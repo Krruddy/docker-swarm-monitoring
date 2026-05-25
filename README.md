@@ -122,16 +122,16 @@ Manually generate the node-identity tokens for the Consul clients:
 export CONSUL_HTTP_TOKEN=<minter-token-secret-id>
 
 consul acl token create \
-  -description "Agent token for ${CONSUL_CLIENT_1_FQDN}" \
+  -description "Multi-purpose token for ${CONSUL_CLIENT_1_FQDN}" \
   -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}"
 
 
 consul acl token create \
-  -description "Agent token for ${CONSUL_CLIENT_2_FQDN}" \
+  -description "Multi-purpose token for ${CONSUL_CLIENT_2_FQDN}" \
   -node-identity="${CONSUL_CLIENT_2_HOSTNAME}:${CONSUL_DATACENTER}"
 
 consul acl token create \
-  -description "Agent token for ${CONSUL_CLIENT_3_FQDN}" \
+  -description "Multi-purpose token for ${CONSUL_CLIENT_3_FQDN}" \
   -node-identity="${CONSUL_CLIENT_3_HOSTNAME}:${CONSUL_DATACENTER}"
 ```
 
@@ -161,7 +161,56 @@ Reload:
 sudo systemctl reload consul
 ```
 
-## Templated policy to give agent write
+### Service registration rights for exporters through tokens
+
+Write the temporary template policy in a file:
+
+```bash
+cat > /tmp/service-${EXPORTER_1}-policy.hcl <<EOF
+service "${EXPORTER_1}" {
+  policy = "write"
+}
+EOF
+```
+
+Create the policy:
+
+```bash
+consul acl policy create \
+  -name "service-${EXPORTER_1}-policy" \
+  -description "Permissions to the '${EXPORTER_1}' service" \
+  -rules @/tmp/service-${EXPORTER_1}-policy.hcl
+```
+
+Create the role:
+
+```bash
+consul acl role create \
+  -name "service-${EXPORTER_1}-role" \
+  -description "Permissions to the '${EXPORTER_1}' service" \
+  -policy-name "service-${EXPORTER_1}-policy"
+```
+
+Update the existing node identity token:
+
+```bash
+consul acl token update \
+  -accessor-id=<accessor_id> \
+  -append-role-name="service-${EXPORTER_1}-role" \
+  -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}"
+```
+
+Or if it already exists, Mint it:
+
+```bash
+consul acl token create \
+  -description "Multi-purpose token for ${CONSUL_CLIENT_1_HOSTNAME}" \
+  -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}" \
+  -role-name "agent-${CONSUL_CLIENT_1_HOSTNAME}-role"
+```
+
+
+### Agent write rights through tokens
 
 Write the temporary template policy in a file:
 
@@ -173,7 +222,7 @@ agent "${CONSUL_CLIENT_1_HOSTNAME}" {
 EOF
 ```
 
-Create the templated policy:
+Create the policy:
 
 ```bash
 consul acl policy create \
@@ -194,7 +243,6 @@ consul acl role create \
 Update the existing node identity token:
 
 ```bash
-# Update
 consul acl token update \
   -accessor-id=<accessor_id> \
   -append-role-name="agent-${CONSUL_CLIENT_1_HOSTNAME}-role" \
@@ -204,9 +252,8 @@ consul acl token update \
 Or if it already exists, Mint it:
 
 ```bash
-# Mint
 consul acl token create \
-  -description "Node identity token for ${CONSUL_CLIENT_1_HOSTNAME}" \
+  -description "Multi-purpose token for ${CONSUL_CLIENT_1_HOSTNAME}" \
   -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}" \
   -role-name "agent-${CONSUL_CLIENT_1_HOSTNAME}-role"
 ```
