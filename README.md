@@ -186,8 +186,8 @@ Create the role:
 
 ```bash
 consul acl role create \
-  -name "service-${EXPORTER_1}-role" \
-  -description "Permissions to the '${EXPORTER_1}' service" \
+  -name "general-monitoring-role" \
+  -description "Role bestows writing permissions into the Node exporter service" \
   -policy-name "service-${EXPORTER_1}-policy"
 ```
 
@@ -196,7 +196,7 @@ Update the existing node identity token:
 ```bash
 consul acl token update \
   -accessor-id=<accessor_id> \
-  -append-role-name="service-${EXPORTER_1}-role" \
+  -append-role-name="general-monitoring-role" \
   -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}"
 ```
 
@@ -206,9 +206,8 @@ Or if it already exists, Mint it:
 consul acl token create \
   -description "Multi-purpose token for ${CONSUL_CLIENT_1_HOSTNAME}" \
   -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}" \
-  -role-name "agent-${CONSUL_CLIENT_1_HOSTNAME}-role"
+  -role-name="general-monitoring-role" \
 ```
-
 
 ### Agent write rights through tokens
 
@@ -231,21 +230,12 @@ consul acl policy create \
   -rules @/tmp/agent-${CONSUL_CLIENT_1_HOSTNAME}-policy.hcl
 ```
 
-Create the role:
-
-```bash
-consul acl role create \
-  -name "agent-${CONSUL_CLIENT_1_HOSTNAME}-role" \
-  -description "Agent permissions for client ${CONSUL_CLIENT_1_HOSTNAME}" \
-  -policy-name "agent-${CONSUL_CLIENT_1_HOSTNAME}-policy"
-```
-
 Update the existing node identity token:
 
 ```bash
 consul acl token update \
   -accessor-id=<accessor_id> \
-  -append-role-name="agent-${CONSUL_CLIENT_1_HOSTNAME}-role" \
+  -append-policy-name="agent-${CONSUL_CLIENT_1_HOSTNAME}-policy" \
   -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}"
 ```
 
@@ -255,7 +245,7 @@ Or if it already exists, Mint it:
 consul acl token create \
   -description "Multi-purpose token for ${CONSUL_CLIENT_1_HOSTNAME}" \
   -node-identity="${CONSUL_CLIENT_1_HOSTNAME}:${CONSUL_DATACENTER}" \
-  -role-name "agent-${CONSUL_CLIENT_1_HOSTNAME}-role"
+  -policy-name="agent-${CONSUL_CLIENT_1_HOSTNAME}-policy" \
 ```
 
 ## Setup
